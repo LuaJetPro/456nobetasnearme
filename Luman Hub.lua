@@ -194,14 +194,15 @@ local HumanoidRootPart = Character:WaitForChild("HumanoidRootPart")
 local StarterPlayer = game:GetService("StarterPlayer")
 local BlockAction = StarterPlayer.StarterCharacterScripts.CharacterHandler.Requests:FindFirstChild("Block")
 
-local DetectionRadius = 5 -- Adjust this value for weapon proximity detection
+local DetectionRadius = 5 -- Adjust this value for proximity detection
 local monitoring = false -- Tracks toggle state
 
-local function detectWeaponProximity()
+local function detectProximity()
     while monitoring do
         pcall(function()
+            -- Check for players' weapons
             for _, livePlayer in pairs(workspace.Live:GetChildren()) do
-                -- Ensure we're not checking the local player
+                -- Exclude the local player
                 if livePlayer.Name ~= LocalPlayer.Name and livePlayer:FindFirstChild("Weapon") then
                     local weapon = livePlayer.Weapon:FindFirstChild("Weapon")
                     if weapon and weapon:IsA("BasePart") then
@@ -215,6 +216,20 @@ local function detectWeaponProximity()
                     end
                 end
             end
+
+            -- Check for nearby non-player objects
+            for _, obj in pairs(workspace.Live:GetChildren()) do
+                -- Exclude players
+                if not obj:FindFirstChild("Humanoid") and obj:IsA("BasePart") then
+                    local distance = (HumanoidRootPart.Position - obj.Position).Magnitude
+                    if distance <= DetectionRadius then
+                        -- Trigger block if the object is close enough
+                        if BlockAction then
+                            BlockAction.Value = true
+                        end
+                    end
+                end
+            end
         end)
         wait(0.1) -- Adjust for performance and responsiveness
     end
@@ -222,12 +237,12 @@ end
 
 -- Add Toggle Callback
 Tab:AddToggle({
-    Name = "Enable Auto-Block/parry",
+    Name = "Enable Auto-Block\parry player and mobs",
     Default = false,
     Callback = function(Value)
         monitoring = Value
         if monitoring then
-            task.spawn(detectWeaponProximity)
+            task.spawn(detectProximity)
         end
     end    
 })
