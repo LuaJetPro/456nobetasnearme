@@ -246,3 +246,64 @@ Tab:AddToggle({
         end
     end    
 })
+
+
+local Workspace = game:GetService("Workspace")
+local chestsFolderName = "Chests"
+
+local function applyGlowEffect(object)
+    if not object:FindFirstChildOfClass("Highlight") then
+        local highlight = Instance.new("Highlight")
+        highlight.Adornee = object
+        highlight.FillColor = Color3.fromRGB(255, 215, 0) -- Gold color for glow
+        highlight.OutlineColor = Color3.fromRGB(255, 255, 255) -- White outline
+        highlight.Parent = object
+    end
+end
+
+local function removeGlowEffect(object)
+    local highlight = object:FindFirstChildOfClass("Highlight")
+    if highlight then
+        highlight:Destroy()
+    end
+end
+
+local function processChests(folder, isEnabled)
+    for _, item in ipairs(folder:GetDescendants()) do
+        if item:IsA("BasePart") or item:IsA("Model") then
+            if isEnabled then
+                applyGlowEffect(item)
+            else
+                removeGlowEffect(item)
+            end
+        end
+    end
+end
+
+local chestsFolder = Workspace:FindFirstChild(chestsFolderName)
+if not chestsFolder then
+    warn("Chests folder not found!")
+    return
+end
+
+-- Toggle setup
+Tab:AddToggle({
+    Name = "Chest Eps",
+    Default = false,
+    Callback = function(Value)
+        if Value then
+            print("Chest ESP Enabled")
+            processChests(chestsFolder, true)
+
+            -- Handle dynamic additions
+            chestsFolder.DescendantAdded:Connect(function(descendant)
+                if descendant:IsA("BasePart") or descendant:IsA("Model") then
+                    applyGlowEffect(descendant)
+                end
+            end)
+        else
+            print("Chest ESP Disabled")
+            processChests(chestsFolder, false)
+        end
+    end
+})
